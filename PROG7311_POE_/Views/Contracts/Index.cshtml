@@ -1,0 +1,108 @@
+﻿@model IEnumerable<PROG7311_POE_.Models.Contract>
+
+@{
+    ViewData["Title"] = "Contracts";
+}
+
+<h1 class="mb-3">Contracts</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-success">Create New Contract</a>
+</p>
+
+
+<div class="card mb-3">
+    <div class="card-body">
+
+        <form method="get" asp-action="Index">
+            <div class="row">
+
+                <div class="col-md-3">
+                    <input type="text"
+                           name="searchString"
+                           class="form-control"
+                           placeholder="Search Client ID" />
+                </div>
+
+                <div class="col-md-3">
+                    <select name="status" class="form-control">
+                        <option value="">All Status</option>
+                        <option>Active</option>
+                        <option>Expired</option>
+                        <option>Draft</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <select name="serviceLevel" class="form-control">
+                        <option value="">All Service Levels</option>
+                        <option>Standard</option>
+                        <option>Premium</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        Search
+                    </button>
+                </div>
+
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Client ID</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Status</th>
+            <th>Service Level</th>
+            <th>Agreement</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @(item.Client?.ClientID ?? 0)
+                </td>
+                <td>
+                    @item.StartDate.ToShortDateString()
+                </td>
+                <td>
+                    @item.EndDate.ToShortDateString()
+                </td>
+                <td>
+                    @item.Status
+                </td>
+                <td>
+                    @item.ServiceLevel
+                </td>
+                <td>
+                    @(item.AgreementFile ?? "No file")
+                </td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.ContractID">Details</a> |
+
+                    @if (!string.IsNullOrEmpty(item.AgreementFile))
+                    {
+                        <a asp-action="ViewFile" asp-route-fileName="@item.AgreementFile">View</a>
+                        <span>|</span>
+                        <a asp-action="DownloadFile" asp-route-fileName="@item.AgreementFile">Download</a>
+                        <span>|</span>
+                    }
+
+                    <a asp-action="Edit" asp-route-id="@item.ContractID">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@item.ContractID">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

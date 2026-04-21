@@ -1,0 +1,56 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container mt-5">
+
+    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
+        <div class="container-fluid py-4 text-center">
+            <h1 class="display-5 fw-bold">TechMove Logistics</h1>
+            <p class="fs-5 text-muted">
+                Manage clients, contracts, and service requests efficiently in one place.
+            </p>
+            <hr class="my-4">
+        </div>
+    </div>
+    <div class="row text-center">
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Clients</h5>
+                    <p class="card-text">Add, view, and manage client information.</p>
+                    <a asp-controller="Clients" asp-action="Index" class="btn btn-primary">
+                        Go to Clients
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Contracts</h5>
+                    <p class="card-text">Create and manage contracts with file uploads.</p>
+                    <a asp-controller="Contracts" asp-action="Index" class="btn btn-success">
+                        Go to Contracts
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Service Requests</h5>
+                    <p class="card-text">Track and manage service requests with cost conversion.</p>
+                    <a asp-controller="ServiceRequests" asp-action="Index" class="btn btn-warning">
+                        Go to Requests
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
