@@ -31,7 +31,6 @@ namespace PROG7311_POE_.Tests
             // Arrange
             IContractFactory factory = new PremiumFactory();
 
-            // Act
             Contract contract = factory.Create();
 
             // Assert
@@ -47,7 +46,6 @@ namespace PROG7311_POE_.Tests
             // Arrange
             IContractFactory factory = new StandardFactory();
 
-            // Act
             Contract contract = factory.Create();
 
             // Assert
@@ -85,8 +83,6 @@ namespace PROG7311_POE_.Tests
             var observer = new Notification();
 
             subject.Attach(observer);
-
-            // Act
             subject.Notify("New Contract");
 
             // Assert
