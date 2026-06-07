@@ -1,4 +1,5 @@
 ﻿using PROG7311_POE_.Models;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -13,16 +14,26 @@ namespace PROG7311_POE_.Services
             _httpClient = httpClient;
         }
 
-        // GET ALL
-        public async Task<List<ServiceRequest>> GetServiceRequestsAsync()
+        // SET TOKEN ONCE
+        private void SetToken(string token)
         {
-            var result = await _httpClient.GetFromJsonAsync<List<ServiceRequest>>("api/servicerequests");
-            return result ?? new List<ServiceRequest>();
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
+
+        // GET ALL
+        public async Task<List<ServiceRequest>> GetServiceRequestsAsync(string token)
+        {
+            SetToken(token);
+
+            return await _httpClient.GetFromJsonAsync<List<ServiceRequest>>("api/servicerequests")
+            ?? new List<ServiceRequest>();
         }
 
         // GET BY ID
-        public async Task<ServiceRequest?> GetServiceRequestByIdAsync(int id)
+        public async Task<ServiceRequest?> GetServiceRequestByIdAsync(int id, string token)
         {
+            SetToken(token);
+
             var response = await _httpClient.GetAsync($"api/servicerequests/{id}");
 
             if (!response.IsSuccessStatusCode)
@@ -30,42 +41,50 @@ namespace PROG7311_POE_.Services
 
             var json = await response.Content.ReadAsStringAsync();
 
-            Console.WriteLine(json); // DEBUG
-
-            return JsonSerializer.Deserialize<ServiceRequest>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            return JsonSerializer.Deserialize<ServiceRequest>(json,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
         }
 
         // CREATE
-        public async Task<bool> CreateServiceRequestAsync(ServiceRequest serviceRequest)
+        public async Task<bool> CreateServiceRequestAsync(ServiceRequest serviceRequest, string token)
         {
+            SetToken(token);
+
             var response = await _httpClient.PostAsJsonAsync("api/servicerequests", serviceRequest);
+
             return response.IsSuccessStatusCode;
         }
 
         // UPDATE
-        public async Task<bool> UpdateServiceRequestAsync(ServiceRequest serviceRequest)
+        public async Task<bool> UpdateServiceRequestAsync(ServiceRequest serviceRequest, string token)
         {
-            var response = await _httpClient.PutAsJsonAsync(
-                $"api/servicerequests/{serviceRequest.ServiceRequestID}",
-                serviceRequest);
+            SetToken(token);
+
+            var response = await _httpClient.PutAsJsonAsync($"api/servicerequests/{serviceRequest.ServiceRequestID}", serviceRequest);
 
             return response.IsSuccessStatusCode;
         }
 
         // DELETE
-        public async Task<bool> DeleteServiceRequestAsync(int id)
+        public async Task<bool> DeleteServiceRequestAsync(int id, string token)
         {
+            SetToken(token);
+
             var response = await _httpClient.DeleteAsync($"api/servicerequests/{id}");
+
             return response.IsSuccessStatusCode;
         }
 
         // EXISTS CHECK
-        public async Task<bool> ServiceRequestExistsAsync(int id)
+        public async Task<bool> ServiceRequestExistsAsync(int id, string token)
         {
+            SetToken(token);
+
             var response = await _httpClient.GetAsync($"api/servicerequests/{id}");
+
             return response.IsSuccessStatusCode;
         }
     }

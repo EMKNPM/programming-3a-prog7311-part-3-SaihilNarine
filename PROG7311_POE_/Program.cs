@@ -34,6 +34,19 @@ internal class Program
         //Add Currency Services
         builder.Services.AddHttpClient<CurrencyService>();
 
+        //Add Session services
+        builder.Services.AddDistributedMemoryCache();
+        builder.Services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromMinutes(30);
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+        });
+        builder.Services.AddHttpClient<AuthenticationApiService>(client =>
+        {
+            client.BaseAddress = new Uri("https://localhost:7224/");
+        });
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -45,7 +58,12 @@ internal class Program
         }
 
         app.UseHttpsRedirection();
+
         app.UseRouting();
+
+        app.UseSession();
+
+        app.UseAuthentication();
 
         app.UseAuthorization();
 

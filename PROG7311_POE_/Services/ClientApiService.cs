@@ -1,4 +1,5 @@
 ﻿using PROG7311_POE_.Models;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -14,9 +15,12 @@ namespace PROG7311_POE_.Services
         }
 
         // GET ALL CLIENTS
-        public async Task<List<Client>> GetClientsAsync()
+        public async Task<List<Client>> GetClientsAsync(string token)
         {
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
             var result = await _httpClient.GetFromJsonAsync<List<Client>>("api/clients");
+
             return result ?? new List<Client>();
         }
 

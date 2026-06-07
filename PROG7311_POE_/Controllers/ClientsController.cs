@@ -23,7 +23,15 @@ namespace PROG7311_POE_.Controllers
         // GET: Clients
         public async Task<IActionResult> Index()
         {
-            var clients = await _apiService.GetClientsAsync();
+            var token = HttpContext.Session.GetString("JWT");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var clients = await _apiService.GetClientsAsync(token);
+
             return View(clients);
         }
 

@@ -28,24 +28,32 @@ namespace PROG7311_POE_.Controllers
         // GET: ServiceRequests
         public async Task<IActionResult> Index()
         {
-            var requests = await _serviceRequestApi.GetServiceRequestsAsync();
+            var token = HttpContext.Session.GetString("JWT");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var requests = await _serviceRequestApi.GetServiceRequestsAsync(token);
             return View(requests);
         }
 
         // GET: ServiceRequests/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var token = HttpContext.Session.GetString("JWT");
 
-            var request = await _serviceRequestApi.GetServiceRequestByIdAsync(id.Value);
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login", "Account");
+
+            if (id == null)
+                return NotFound();
+
+            var request = await _serviceRequestApi.GetServiceRequestByIdAsync(id.Value, token);
 
             if (request == null)
-            {
                 return NotFound();
-            }
 
             return View(request);
         }
@@ -53,7 +61,15 @@ namespace PROG7311_POE_.Controllers
         // GET: ServiceRequests/Create
         public async Task<IActionResult> Create()
         {
-            var contracts = await _contractApi.GetContractsAsync();
+            var token = HttpContext.Session.GetString("JWT");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+                
+
+            var contracts = await _contractApi.GetContractsAsync(token);
 
             ViewData["ContractID"] = new SelectList(contracts, "ContractID", "ContractID");
 
@@ -67,7 +83,12 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ServiceRequest serviceRequest)
         {
-            var contracts = await _contractApi.GetContractsAsync();
+            var token = HttpContext.Session.GetString("JWT");
+
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login", "Account");
+
+            var contracts = await _contractApi.GetContractsAsync(token);
 
             var contract = contracts.FirstOrDefault(c => c.ContractID == serviceRequest.ContractID);
 
@@ -83,9 +104,10 @@ namespace PROG7311_POE_.Controllers
                 return View(serviceRequest);
             }
 
-            serviceRequest.Cost = await _currencyService.ConvertUsdToZar(serviceRequest.Cost);
+            serviceRequest.Cost =
+                await _currencyService.ConvertUsdToZar(serviceRequest.Cost);
 
-            await _serviceRequestApi.CreateServiceRequestAsync(serviceRequest);
+            await _serviceRequestApi.CreateServiceRequestAsync(serviceRequest, token);
 
             return RedirectToAction(nameof(Index));
         }
@@ -93,13 +115,16 @@ namespace PROG7311_POE_.Controllers
         // GET: ServiceRequests/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null) return NotFound();
+            var token = HttpContext.Session.GetString("JWT");
 
-            var request = await _serviceRequestApi.GetServiceRequestByIdAsync(id.Value);
+            if (id == null) return NotFound();
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login", "Account");
+
+            var request = await _serviceRequestApi.GetServiceRequestByIdAsync(id.Value, token);
 
             if (request == null) return NotFound();
 
-            var contracts = await _contractApi.GetContractsAsync();
+            var contracts = await _contractApi.GetContractsAsync(token);
 
             ViewData["ContractID"] = new SelectList(contracts, "ContractID", "ContractID", request.ContractID);
 
@@ -113,21 +138,24 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ServiceRequest serviceRequest)
         {
+            var token = HttpContext.Session.GetString("JWT");
+
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login", "Account");
+
             if (id != serviceRequest.ServiceRequestID)
-            {
                 return NotFound();
-            }
 
             if (!ModelState.IsValid)
             {
-                var contracts = await _contractApi.GetContractsAsync();
+                var contracts = await _contractApi.GetContractsAsync(token);
 
                 ViewData["ContractID"] = new SelectList(contracts, "ContractID", "ContractID", serviceRequest.ContractID);
 
                 return View(serviceRequest);
             }
 
-            await _serviceRequestApi.UpdateServiceRequestAsync(serviceRequest);
+            await _serviceRequestApi.UpdateServiceRequestAsync(serviceRequest, token);
 
             return RedirectToAction(nameof(Index));
         }
@@ -135,17 +163,18 @@ namespace PROG7311_POE_.Controllers
         // GET: ServiceRequests/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
+            var token = HttpContext.Session.GetString("JWT");
+
             if (id == null)
-            {
                 return NotFound();
-            }
-                
-            var request = await _serviceRequestApi.GetServiceRequestByIdAsync(id.Value);
+
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login", "Account");
+
+            var request = await _serviceRequestApi.GetServiceRequestByIdAsync(id.Value, token);
 
             if (request == null)
-            {
                 return NotFound();
-            }
 
             return View(request);
         }
@@ -155,7 +184,13 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _serviceRequestApi.DeleteServiceRequestAsync(id);
+            var token = HttpContext.Session.GetString("JWT");
+
+            if (string.IsNullOrEmpty(token))
+                return RedirectToAction("Login", "Account");
+
+            await _serviceRequestApi.DeleteServiceRequestAsync(id, token);
+
             return RedirectToAction(nameof(Index));
         }
     }

@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using PROG7311_POE_.Models;
 using PROG7311_POE_API.Services;
 
 namespace PROG7311_POE_API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/clients")]
     public class ClientsController : ControllerBase

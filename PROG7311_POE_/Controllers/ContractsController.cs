@@ -27,7 +27,14 @@ namespace PROG7311_POE_.Controllers
         // GET: Contracts
         public async Task<IActionResult> Index(string searchString, string status, string serviceLevel)
         {
-            var contracts = (await _apiService.GetContractsAsync()).AsQueryable();
+            var token = HttpContext.Session.GetString("JWT");
+
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var contracts = (await _apiService.GetContractsAsync(token)).AsQueryable();
 
             if (!string.IsNullOrEmpty(searchString))
             {
@@ -68,7 +75,9 @@ namespace PROG7311_POE_.Controllers
         // GET: Contracts/Create
         public async Task<IActionResult> Create()
         {
-            var clients = await _clientapiService.GetClientsAsync();
+            var token = HttpContext.Session.GetString("JWT");
+
+            var clients = await _clientapiService.GetClientsAsync(token);
 
             ViewBag.ClientID = new SelectList(clients, "ClientID", "Name");
 
@@ -84,7 +93,9 @@ namespace PROG7311_POE_.Controllers
         {
             if (!ModelState.IsValid)
             {
-                var clients = await _clientapiService.GetClientsAsync();
+                var token = HttpContext.Session.GetString("JWT");
+
+                var clients = await _clientapiService.GetClientsAsync(token);
                 ViewBag.ClientID = new SelectList(clients, "ClientID", "Name");
 
                 return View(contract);
