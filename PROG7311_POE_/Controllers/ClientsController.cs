@@ -1,28 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using PROG7311_POE_.Data;
 using PROG7311_POE_.Models;
+using PROG7311_POE_.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace PROG7311_POE_.Controllers
 {
     public class ClientsController : Controller
     {
-        private readonly PROG7311_POE_Context _context;
+        private readonly ClientApiService _apiService;
 
-        public ClientsController(PROG7311_POE_Context context)
+        public ClientsController(ClientApiService apiService)
         {
-            _context = context;
+            _apiService = apiService;
         }
 
         // GET: Clients
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Client.ToListAsync());
+            var clients = await _apiService.GetClientsAsync();
+            return View(clients);
         }
 
         // GET: Clients/Details/5
@@ -31,10 +33,10 @@ namespace PROG7311_POE_.Controllers
             if (id == null)
             {
                 return NotFound();
-            }
+            } 
 
-            var client = await _context.Client
-                .FirstOrDefaultAsync(m => m.ClientID == id);
+            var client = await _apiService.GetClientByIdAsync(id.Value);
+
             if (client == null)
             {
                 return NotFound();
@@ -71,8 +73,7 @@ namespace PROG7311_POE_.Controllers
                 return View(client);
             }
 
-            _context.Add(client);
-            await _context.SaveChangesAsync();
+            await _apiService.CreateClientAsync(client);
             return RedirectToAction(nameof(Index));
         }
 
@@ -84,7 +85,8 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var client = await _context.Client.FindAsync(id);
+            var client = await _apiService.GetClientByIdAsync(id.Value);
+
             if (client == null)
             {
                 return NotFound();
@@ -97,34 +99,17 @@ namespace PROG7311_POE_.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ClientID,Name,ContactDetails,Region")] Client client)
+        public async Task<IActionResult> Edit(int id, Client client)
         {
             if (id != client.ClientID)
-            {
                 return NotFound();
-            }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(client);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ClientExists(client.ClientID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(client);
+            if (!ModelState.IsValid)
+                return View(client);
+
+            await _apiService.UpdateClientAsync(client);
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Clients/Delete/5
@@ -135,8 +120,8 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var client = await _context.Client
-                .FirstOrDefaultAsync(m => m.ClientID == id);
+            var client = await _apiService.GetClientByIdAsync(id.Value);
+
             if (client == null)
             {
                 return NotFound();
@@ -145,24 +130,14 @@ namespace PROG7311_POE_.Controllers
             return View(client);
         }
 
-        // POST: Clients/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var client = await _context.Client.FindAsync(id);
-            if (client != null)
-            {
-                _context.Client.Remove(client);
-            }
+            await _apiService.DeleteClientAsync(id);
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ClientExists(int id)
-        {
-            return _context.Client.Any(e => e.ClientID == id);
-        }
     }
 }

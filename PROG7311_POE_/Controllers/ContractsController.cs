@@ -5,6 +5,7 @@ using PROG7311_POE_.Data;
 using PROG7311_POE_.Factories;
 using PROG7311_POE_.Models;
 using PROG7311_POE_.Observers;
+using PROG7311_POE_.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,24 +15,23 @@ namespace PROG7311_POE_.Controllers
 {
     public class ContractsController : Controller
     {
-        private readonly PROG7311_POE_Context _context;
+        private readonly ContractApiService _apiService;
+        private readonly ClientApiService _clientapiService;
 
-        public ContractsController(PROG7311_POE_Context context)
+        public ContractsController(ContractApiService apiService, ClientApiService clientapiService)
         {
-            _context = context;
+            _apiService = apiService;
+            _clientapiService = clientapiService;
         }
 
         // GET: Contracts
         public async Task<IActionResult> Index(string searchString, string status, string serviceLevel)
         {
-            var contracts = _context.Contract
-                .Include(c => c.Client)
-                .AsQueryable();
+            var contracts = (await _apiService.GetContractsAsync()).AsQueryable();
 
             if (!string.IsNullOrEmpty(searchString))
             {
-                contracts = contracts.Where(c =>
-                    c.ClientID.ToString().Contains(searchString));
+                contracts = contracts.Where(c =>c.ClientID.ToString().Contains(searchString));
             }
 
             if (!string.IsNullOrEmpty(status))
@@ -44,7 +44,7 @@ namespace PROG7311_POE_.Controllers
                 contracts = contracts.Where(c => c.ServiceLevel == serviceLevel);
             }
 
-            return View(await contracts.ToListAsync());
+            return View(contracts);
         }
 
         // GET: Contracts/Details/5
@@ -55,9 +55,8 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var contract = await _context.Contract
-                .Include(c => c.Client)
-                .FirstOrDefaultAsync(m => m.ContractID == id);
+            var contract = await _apiService.GetContractByIdAsync(id.Value);
+
             if (contract == null)
             {
                 return NotFound();
@@ -67,9 +66,12 @@ namespace PROG7311_POE_.Controllers
         }
 
         // GET: Contracts/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewBag.ClientID = new SelectList(_context.Client, "ClientID", "ClientID");
+            var clients = await _clientapiService.GetClientsAsync();
+
+            ViewBag.ClientID = new SelectList(clients, "ClientID", "Name");
+
             return View();
         }
 
@@ -82,7 +84,9 @@ namespace PROG7311_POE_.Controllers
         {
             if (!ModelState.IsValid)
             {
-                ViewBag.ClientID = new SelectList(_context.Client, "ClientID", "ClientID", contract.ClientID);
+                var clients = await _clientapiService.GetClientsAsync();
+                ViewBag.ClientID = new SelectList(clients, "ClientID", "Name");
+
                 return View(contract);
             }
 
@@ -118,8 +122,7 @@ namespace PROG7311_POE_.Controllers
                 newContract.AgreementFile = fileName;
             }
 
-            _context.Add(newContract);
-            await _context.SaveChangesAsync();
+            await _apiService.CreateContractAsync(newContract);
 
             var subject = new ContractSubject();
             subject.Attach(new Notification());
@@ -136,12 +139,13 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var contract = await _context.Contract.FindAsync(id);
+            var contract = await _apiService.GetContractByIdAsync(id.Value);
+
             if (contract == null)
             {
                 return NotFound();
             }
-            ViewData["ClientID"] = new SelectList(_context.Client, "ClientID", "ClientID", contract.ClientID);
+            
             return View(contract);
         }
 
@@ -150,35 +154,30 @@ namespace PROG7311_POE_.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ContractID,ClientID,StartDate,EndDate,Status,ServiceLevel,AgreementFile")] Contract contract)
+        public async Task<IActionResult> Edit(int id, Contract contract)
         {
             if (id != contract.ContractID)
+            {
+                return BadRequest("ID mismatch");
+            }
+                
+            if (!ModelState.IsValid)
+            {
+                return View(contract);
+            }
+                
+            var existing = await _apiService.GetContractByIdAsync(id);
+
+            if (existing == null)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(contract);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ContractExists(contract.ContractID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["ClientID"] = new SelectList(_context.Client, "ClientID", "ClientID", contract.ClientID);
-            return View(contract);
+            contract.AgreementFile ??= existing.AgreementFile;
+
+            await _apiService.UpdateContractAsync(contract);
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Contracts/Delete/5
@@ -189,9 +188,8 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var contract = await _context.Contract
-                .Include(c => c.Client)
-                .FirstOrDefaultAsync(m => m.ContractID == id);
+            var contract = await _apiService.GetContractByIdAsync(id.Value);
+
             if (contract == null)
             {
                 return NotFound();
@@ -205,19 +203,19 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var contract = await _context.Contract.FindAsync(id);
-            if (contract != null)
-            {
-                _context.Contract.Remove(contract);
-            }
+            var existing = await _apiService.GetContractByIdAsync(id);
 
-            await _context.SaveChangesAsync();
+            if (existing == null)
+                return NotFound();
+
+            await _apiService.DeleteContractAsync(id);
+
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ContractExists(int id)
+        private async Task<bool> ContractExists(int id)
         {
-            return _context.Contract.Any(e => e.ContractID == id);
+            return await _apiService.ContractExistsAsync(id);
         }
 
         public IActionResult ViewFile(string fileName)

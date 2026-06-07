@@ -14,20 +14,22 @@ namespace PROG7311_POE_.Controllers
 {
     public class ServiceRequestsController : Controller
     {
-        private readonly PROG7311_POE_Context _context;
+        private readonly ServiceRequestApiService _serviceRequestApi;
+        private readonly ContractApiService _contractApi;
         private readonly CurrencyService _currencyService;
 
-        public ServiceRequestsController(PROG7311_POE_Context context, CurrencyService currencyService)
+        public ServiceRequestsController(ServiceRequestApiService serviceRequestApi, ContractApiService contractApi, CurrencyService currencyService)
         {
-            _context = context;
+            _serviceRequestApi = serviceRequestApi;
+            _contractApi = contractApi;
             _currencyService = currencyService;
         }
 
         // GET: ServiceRequests
         public async Task<IActionResult> Index()
         {
-            var pROG7311_POE_Context = _context.ServiceRequest.Include(s => s.Contract);
-            return View(await pROG7311_POE_Context.ToListAsync());
+            var requests = await _serviceRequestApi.GetServiceRequestsAsync();
+            return View(requests);
         }
 
         // GET: ServiceRequests/Details/5
@@ -38,21 +40,23 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var serviceRequest = await _context.ServiceRequest
-                .Include(s => s.Contract)
-                .FirstOrDefaultAsync(m => m.ServiceRequestID == id);
-            if (serviceRequest == null)
+            var request = await _serviceRequestApi.GetServiceRequestByIdAsync(id.Value);
+
+            if (request == null)
             {
                 return NotFound();
             }
 
-            return View(serviceRequest);
+            return View(request);
         }
 
         // GET: ServiceRequests/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["ContractID"] = new SelectList(_context.Contract, "ContractID", "ContractID");
+            var contracts = await _contractApi.GetContractsAsync();
+
+            ViewData["ContractID"] = new SelectList(contracts, "ContractID", "ContractID");
+
             return View();
         }
 
@@ -63,8 +67,9 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ServiceRequest serviceRequest)
         {
-            var contract = await _context.Contract
-                .FirstOrDefaultAsync(c => c.ContractID == serviceRequest.ContractID);
+            var contracts = await _contractApi.GetContractsAsync();
+
+            var contract = contracts.FirstOrDefault(c => c.ContractID == serviceRequest.ContractID);
 
             var validator = new ContractValidator();
             string error;
@@ -72,15 +77,15 @@ namespace PROG7311_POE_.Controllers
             if (!validator.CanCreateRequest(contract, out error))
             {
                 ModelState.AddModelError("", error);
+
+                ViewData["ContractID"] = new SelectList(contracts, "ContractID", "ContractID");
+
                 return View(serviceRequest);
             }
 
-            // FIXED: use injected service (NOT Singleton)
-            serviceRequest.Cost =
-                await _currencyService.ConvertUsdToZar(serviceRequest.Cost);
+            serviceRequest.Cost = await _currencyService.ConvertUsdToZar(serviceRequest.Cost);
 
-            _context.Add(serviceRequest);
-            await _context.SaveChangesAsync();
+            await _serviceRequestApi.CreateServiceRequestAsync(serviceRequest);
 
             return RedirectToAction(nameof(Index));
         }
@@ -88,18 +93,17 @@ namespace PROG7311_POE_.Controllers
         // GET: ServiceRequests/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var serviceRequest = await _context.ServiceRequest.FindAsync(id);
-            if (serviceRequest == null)
-            {
-                return NotFound();
-            }
-            ViewData["ContractID"] = new SelectList(_context.Contract, "ContractID", "ContractID", serviceRequest.ContractID);
-            return View(serviceRequest);
+            var request = await _serviceRequestApi.GetServiceRequestByIdAsync(id.Value);
+
+            if (request == null) return NotFound();
+
+            var contracts = await _contractApi.GetContractsAsync();
+
+            ViewData["ContractID"] = new SelectList(contracts, "ContractID", "ContractID", request.ContractID);
+
+            return View(request);
         }
 
         // POST: ServiceRequests/Edit/5
@@ -107,35 +111,25 @@ namespace PROG7311_POE_.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ServiceRequestID,ContractID,Description,Cost,Status")] ServiceRequest serviceRequest)
+        public async Task<IActionResult> Edit(int id, ServiceRequest serviceRequest)
         {
             if (id != serviceRequest.ServiceRequestID)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(serviceRequest);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ServiceRequestExists(serviceRequest.ServiceRequestID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                var contracts = await _contractApi.GetContractsAsync();
+
+                ViewData["ContractID"] = new SelectList(contracts, "ContractID", "ContractID", serviceRequest.ContractID);
+
+                return View(serviceRequest);
             }
-            ViewData["ContractID"] = new SelectList(_context.Contract, "ContractID", "ContractID", serviceRequest.ContractID);
-            return View(serviceRequest);
+
+            await _serviceRequestApi.UpdateServiceRequestAsync(serviceRequest);
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: ServiceRequests/Delete/5
@@ -145,16 +139,15 @@ namespace PROG7311_POE_.Controllers
             {
                 return NotFound();
             }
+                
+            var request = await _serviceRequestApi.GetServiceRequestByIdAsync(id.Value);
 
-            var serviceRequest = await _context.ServiceRequest
-                .Include(s => s.Contract)
-                .FirstOrDefaultAsync(m => m.ServiceRequestID == id);
-            if (serviceRequest == null)
+            if (request == null)
             {
                 return NotFound();
             }
 
-            return View(serviceRequest);
+            return View(request);
         }
 
         // POST: ServiceRequests/Delete/5
@@ -162,19 +155,8 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var serviceRequest = await _context.ServiceRequest.FindAsync(id);
-            if (serviceRequest != null)
-            {
-                _context.ServiceRequest.Remove(serviceRequest);
-            }
-
-            await _context.SaveChangesAsync();
+            await _serviceRequestApi.DeleteServiceRequestAsync(id);
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ServiceRequestExists(int id)
-        {
-            return _context.ServiceRequest.Any(e => e.ServiceRequestID == id);
         }
     }
 }
