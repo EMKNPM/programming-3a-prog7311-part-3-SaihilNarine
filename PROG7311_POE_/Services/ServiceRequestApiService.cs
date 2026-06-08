@@ -14,10 +14,13 @@ namespace PROG7311_POE_.Services
             _httpClient = httpClient;
         }
 
-        // SET TOKEN ONCE
         private void SetToken(string token)
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            if (string.IsNullOrEmpty(token))
+                throw new Exception("JWT token is missing");
+
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         }
 
         // GET ALL
@@ -25,8 +28,16 @@ namespace PROG7311_POE_.Services
         {
             SetToken(token);
 
-            return await _httpClient.GetFromJsonAsync<List<ServiceRequest>>("api/servicerequests")
-            ?? new List<ServiceRequest>();
+            var response = await _httpClient.GetAsync("api/servicerequests");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"GET FAILED: {response.StatusCode} - {error}");
+            }
+
+            return await response.Content.ReadFromJsonAsync<List<ServiceRequest>>()
+                   ?? new List<ServiceRequest>();
         }
 
         // GET BY ID
@@ -49,33 +60,48 @@ namespace PROG7311_POE_.Services
         }
 
         // CREATE
-        public async Task<bool> CreateServiceRequestAsync(ServiceRequest serviceRequest, string token)
+        public async Task CreateServiceRequestAsync(ServiceRequest serviceRequest, string token)
         {
             SetToken(token);
 
             var response = await _httpClient.PostAsJsonAsync("api/servicerequests", serviceRequest);
 
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"CREATE FAILED: {response.StatusCode} - {error}");
+            }
         }
 
         // UPDATE
-        public async Task<bool> UpdateServiceRequestAsync(ServiceRequest serviceRequest, string token)
+        public async Task UpdateServiceRequestAsync(ServiceRequest serviceRequest, string token)
         {
             SetToken(token);
 
-            var response = await _httpClient.PutAsJsonAsync($"api/servicerequests/{serviceRequest.ServiceRequestID}", serviceRequest);
+            var response = await _httpClient.PutAsJsonAsync(
+                $"api/servicerequests/{serviceRequest.ServiceRequestID}",
+                serviceRequest
+            );
 
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"UPDATE FAILED: {response.StatusCode} - {error}");
+            }
         }
 
         // DELETE
-        public async Task<bool> DeleteServiceRequestAsync(int id, string token)
+        public async Task DeleteServiceRequestAsync(int id, string token)
         {
             SetToken(token);
 
             var response = await _httpClient.DeleteAsync($"api/servicerequests/{id}");
 
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"DELETE FAILED: {response.StatusCode} - {error}");
+            }
         }
 
         // EXISTS CHECK

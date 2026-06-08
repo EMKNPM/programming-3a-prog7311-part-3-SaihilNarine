@@ -1,13 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.7.11822.327 insiders
+VisualStudioVersion = 18.7.11822.327
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PROG7311_POE_", "PROG7311_POE_\PROG7311_POE_.csproj", "{C707A524-AECB-4681-B9DD-87C398BA7C2D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PROG7311_POE_.Tests", "PROG7311_POE_.Tests\PROG7311_POE_.Tests.csproj", "{060AB326-0CF1-4C08-A4F3-75421B9572BE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PROG7311_POE_API", "PROG7311_POE_API\PROG7311_POE_API.csproj", "{1CC57D25-32D0-4C57-B803-BA70DD69B2E1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{66C5B55D-2763-4F1F-BA20-68AA61657D04}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
