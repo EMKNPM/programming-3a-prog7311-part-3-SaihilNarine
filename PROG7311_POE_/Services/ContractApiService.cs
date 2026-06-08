@@ -14,17 +14,27 @@ namespace PROG7311_POE_.Services
             _httpClient = httpClient;
         }
 
+        private void AddToken(string token)
+        {
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+        }
+
         // GET ALL
         public async Task<List<Contract>> GetContractsAsync(string token)
         {
+            AddToken(token);
+
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             
             return await _httpClient.GetFromJsonAsync<List<Contract>>("api/contracts") ?? new List<Contract>();
         }
 
         // GET BY ID
-        public async Task<Contract?> GetContractByIdAsync(int id)
+        public async Task<Contract?> GetContractByIdAsync(int id, string token)
         {
+            AddToken(token);
+
             var response = await _httpClient.GetAsync($"api/contracts/{id}");
 
             if (!response.IsSuccessStatusCode)
@@ -44,15 +54,19 @@ namespace PROG7311_POE_.Services
         }
 
         // CREATE
-        public async Task<bool> CreateContractAsync(Contract contract)
+        public async Task<bool> CreateContractAsync(Contract contract, string token)
         {
+            AddToken(token);
+
             var response = await _httpClient.PostAsJsonAsync("api/contracts", contract);
             return response.IsSuccessStatusCode;
         }
 
         // UPDATE
-        public async Task<bool> UpdateContractAsync(Contract contract)
+        public async Task<bool> UpdateContractAsync(Contract contract, string token)
         {
+            AddToken(token);
+
             var response = await _httpClient.PutAsJsonAsync(
                 $"api/contracts/{contract.ContractID}",
                 contract);
@@ -61,15 +75,19 @@ namespace PROG7311_POE_.Services
         }
 
         // DELETE
-        public async Task<bool> DeleteContractAsync(int id)
+        public async Task<bool> DeleteContractAsync(int id, string token)
         {
+            AddToken(token);
+
             var response = await _httpClient.DeleteAsync($"api/contracts/{id}");
             return response.IsSuccessStatusCode;
         }
 
         // PATCH STATUS
-        public async Task<bool> UpdateStatusAsync(int id, string status)
+        public async Task<bool> UpdateStatusAsync(int id, string status, string token)
         {
+            AddToken(token);
+
             var response = await _httpClient.PatchAsync(
                 $"api/contracts/{id}/status?status={status}",
                 null);

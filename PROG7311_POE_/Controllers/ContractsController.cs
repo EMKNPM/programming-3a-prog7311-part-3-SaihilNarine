@@ -62,7 +62,13 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var contract = await _apiService.GetContractByIdAsync(id.Value);
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var contract = await _apiService.GetContractByIdAsync(id.Value, token);
 
             if (contract == null)
             {
@@ -91,13 +97,16 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Contract contract, IFormFile file)
         {
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (!ModelState.IsValid)
             {
-                var token = HttpContext.Session.GetString("JWT");
-
                 var clients = await _clientapiService.GetClientsAsync(token);
                 ViewBag.ClientID = new SelectList(clients, "ClientID", "Name");
-
                 return View(contract);
             }
 
@@ -114,7 +123,6 @@ namespace PROG7311_POE_.Controllers
             newContract.Status = contract.Status;
             newContract.ServiceLevel = contract.ServiceLevel;
 
-            // FILE UPLOAD FIXED
             if (file != null && file.Length > 0)
             {
                 var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/files");
@@ -133,7 +141,7 @@ namespace PROG7311_POE_.Controllers
                 newContract.AgreementFile = fileName;
             }
 
-            await _apiService.CreateContractAsync(newContract);
+            await _apiService.CreateContractAsync(newContract, token);
 
             var subject = new ContractSubject();
             subject.Attach(new Notification());
@@ -150,7 +158,13 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var contract = await _apiService.GetContractByIdAsync(id.Value);
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var contract = await _apiService.GetContractByIdAsync(id.Value, token);
 
             if (contract == null)
             {
@@ -176,8 +190,14 @@ namespace PROG7311_POE_.Controllers
             {
                 return View(contract);
             }
-                
-            var existing = await _apiService.GetContractByIdAsync(id);
+
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            
+            var existing = await _apiService.GetContractByIdAsync(id, token);
 
             if (existing == null)
             {
@@ -186,7 +206,7 @@ namespace PROG7311_POE_.Controllers
 
             contract.AgreementFile ??= existing.AgreementFile;
 
-            await _apiService.UpdateContractAsync(contract);
+            await _apiService.UpdateContractAsync(contract, token);
 
             return RedirectToAction(nameof(Index));
         }
@@ -199,7 +219,13 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var contract = await _apiService.GetContractByIdAsync(id.Value);
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var contract = await _apiService.GetContractByIdAsync(id.Value, token);
 
             if (contract == null)
             {
@@ -214,12 +240,18 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var existing = await _apiService.GetContractByIdAsync(id);
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var existing = await _apiService.GetContractByIdAsync(id, token);
 
             if (existing == null)
                 return NotFound();
 
-            await _apiService.DeleteContractAsync(id);
+            await _apiService.DeleteContractAsync(id, token);
 
             return RedirectToAction(nameof(Index));
         }

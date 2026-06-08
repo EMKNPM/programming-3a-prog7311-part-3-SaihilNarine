@@ -41,9 +41,15 @@ namespace PROG7311_POE_.Controllers
             if (id == null)
             {
                 return NotFound();
-            } 
+            }
 
-            var client = await _apiService.GetClientByIdAsync(id.Value);
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var client = await _apiService.GetClientByIdAsync(id.Value, token);
 
             if (client == null)
             {
@@ -56,6 +62,11 @@ namespace PROG7311_POE_.Controllers
         // GET: Clients/Create
         public IActionResult Create()
         {
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
             return View();
         }
 
@@ -66,6 +77,12 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Client client)
         {
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values
@@ -81,7 +98,7 @@ namespace PROG7311_POE_.Controllers
                 return View(client);
             }
 
-            await _apiService.CreateClientAsync(client);
+            await _apiService.CreateClientAsync(client, token);
             return RedirectToAction(nameof(Index));
         }
 
@@ -93,7 +110,13 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var client = await _apiService.GetClientByIdAsync(id.Value);
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var client = await _apiService.GetClientByIdAsync(id.Value, token);
 
             if (client == null)
             {
@@ -109,13 +132,19 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Client client)
         {
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id != client.ClientID)
                 return NotFound();
 
             if (!ModelState.IsValid)
                 return View(client);
 
-            await _apiService.UpdateClientAsync(client);
+            await _apiService.UpdateClientAsync(client, token);
 
             return RedirectToAction(nameof(Index));
         }
@@ -128,7 +157,13 @@ namespace PROG7311_POE_.Controllers
                 return NotFound();
             }
 
-            var client = await _apiService.GetClientByIdAsync(id.Value);
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var client = await _apiService.GetClientByIdAsync(id.Value, token);
 
             if (client == null)
             {
@@ -142,7 +177,13 @@ namespace PROG7311_POE_.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _apiService.DeleteClientAsync(id);
+            var token = HttpContext.Session.GetString("JWT");
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            await _apiService.DeleteClientAsync(id, token);
 
             return RedirectToAction(nameof(Index));
         }

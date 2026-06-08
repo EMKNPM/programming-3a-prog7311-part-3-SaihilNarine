@@ -14,9 +14,17 @@ namespace PROG7311_POE_.Services
             _httpClient = httpClient;
         }
 
+        private void AddToken(string token)
+        {
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+        }
+
         // GET ALL CLIENTS
         public async Task<List<Client>> GetClientsAsync(string token)
         {
+            AddToken(token);
+
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var result = await _httpClient.GetFromJsonAsync<List<Client>>("api/clients");
@@ -25,8 +33,10 @@ namespace PROG7311_POE_.Services
         }
 
         // GET CLIENT BY ID
-        public async Task<Client?> GetClientByIdAsync(int id)
+        public async Task<Client?> GetClientByIdAsync(int id, string token)
         {
+            AddToken(token);
+
             var response = await _httpClient.GetAsync($"api/clients/{id}");
 
             if (!response.IsSuccessStatusCode)
@@ -44,15 +54,19 @@ namespace PROG7311_POE_.Services
         }
 
         // CREATE CLIENT
-        public async Task<bool> CreateClientAsync(Client client)
+        public async Task<bool> CreateClientAsync(Client client, string token)
         {
+            AddToken(token);
+
             var response = await _httpClient.PostAsJsonAsync("api/clients", client);
             return response.IsSuccessStatusCode;
         }
 
         // UPDATE CLIENT
-        public async Task<bool> UpdateClientAsync(Client client)
+        public async Task<bool> UpdateClientAsync(Client client, string token)
         {
+            AddToken(token);
+
             var response = await _httpClient.PutAsJsonAsync(
                 $"api/clients/{client.ClientID}",
                 client);
@@ -61,15 +75,19 @@ namespace PROG7311_POE_.Services
         }
 
         // DELETE CLIENT
-        public async Task<bool> DeleteClientAsync(int id)
+        public async Task<bool> DeleteClientAsync(int id, string token)
         {
+            AddToken(token);
+
             var response = await _httpClient.DeleteAsync($"api/clients/{id}");
             return response.IsSuccessStatusCode;
         }
 
         // CHECK IF CLIENT EXISTS
-        public async Task<bool> ClientExistsAsync(int id)
+        public async Task<bool> ClientExistsAsync(int id, string token)
         {
+            AddToken(token);
+
             var response = await _httpClient.GetAsync($"api/clients/{id}");
             return response.IsSuccessStatusCode;
         }
